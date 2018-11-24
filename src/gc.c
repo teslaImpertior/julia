@@ -925,6 +925,9 @@ static bigval_t **sweep_big_list(int sweep_full, bigval_t **pv) JL_NOTSAFEPOINT
             gc_invoke_callbacks(jl_gc_cb_notify_external_free_t,
                 gc_cblist_notify_external_free, (v));
             jl_free_aligned(v);
+
+            if (jl_memprofile_running())
+                jl_memprofile_track_dealloc(v);
         }
         gc_time_count_big(old_bits, bits);
         v = nxt;
@@ -1003,6 +1006,10 @@ static void jl_gc_free_array(jl_array_t *a) JL_NOTSAFEPOINT
             jl_free_aligned(d);
         else
             free(d);
+
+        if (jl_memprofile_running())
+            jl_memprofile_track_dealloc(d);
+
         gc_num.freed += array_nbytes(a);
     }
 }
@@ -3002,6 +3009,9 @@ JL_DLLEXPORT void jl_gc_counted_free_with_size(void *p, size_t sz)
     free(p);
     gc_num.freed += sz;
     gc_num.freecall++;
+
+    if (jl_memprofile_running())
+        jl_memprofile_track_dealloc(p);
 }
 
 // older name for jl_gc_counted_free_with_size

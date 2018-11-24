@@ -246,6 +246,11 @@ STATIC_INLINE uint8_t JL_CONST_FUNC jl_gc_szclass(unsigned sz)
     return klass + N;
 }
 
+// Necessary memory profiler prototypes
+void jl_memprofile_track_alloc(size_t allocsz, void *ty, void *v);
+void jl_memprofile_track_dealloc(void *v);
+JL_DLLEXPORT int jl_memprofile_running(void);
+
 #define JL_SMALL_BYTE_ALIGNMENT 16
 #define JL_CACHE_BYTE_ALIGNMENT 64
 // JL_HEAP_ALIGNMENT is the maximum alignment that the GC can provide
@@ -266,6 +271,11 @@ STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
         if (allocsz < sz) // overflow in adding offs, size was "negative"
             jl_throw(jl_memory_exception);
         v = jl_gc_big_alloc(ptls, allocsz);
+    }
+
+    // If the memory profiler is running, then make sure it keeps track.
+    if (jl_memprofile_running()) {
+        jl_memprofile_track_alloc(allocsz, ty, v);
     }
     jl_set_typeof(v, ty);
     return v;
