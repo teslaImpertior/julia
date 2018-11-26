@@ -68,6 +68,9 @@ before_install:
         export JULIA_TEST_MAXRSS_MB=1200;
         TESTSTORUN="all";
       elif [ `uname` = "Darwin" ]; then
+        brew remove --force $(brew list) --ignore-dependencies;
+        brew cleanup;
+        brew prune;
         brew update;
         brew install -v jq pv ccache;
         export PATH="$(brew --prefix ccache)/libexec:$PATH";
