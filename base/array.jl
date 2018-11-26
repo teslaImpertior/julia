@@ -2318,7 +2318,7 @@ julia> filter(isodd, a)
  9
 ```
 """
-filter(f, As::AbstractArray) = As[map(f, As)::AbstractArray{Bool}]
+filter(f, As::AbstractArray) = @inbounds As[map(f, As)::AbstractArray{Bool}]
 
 """
     filter!(f, a::AbstractVector)
@@ -2345,7 +2345,7 @@ function filter!(f, a::AbstractVector)
 
     for acurr in a
         if f(acurr)
-            a[i] = acurr
+            @inbounds a[i] = acurr
             y = iterate(idx, state)
             y === nothing && (i += 1; break)
             i, state = y
