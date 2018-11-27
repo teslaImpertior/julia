@@ -169,8 +169,8 @@ This construct is NOT threadsafe.
 mutable struct Semaphore
     sem_size::Int
     curr_cnt::Int
-    cond_wait::Condition
-    Semaphore(sem_size) = sem_size > 0 ? new(sem_size, 0, Condition()) : throw(ArgumentError("Semaphore size must be > 0"))
+    cond_wait::ConditionST
+    Semaphore(sem_size) = sem_size > 0 ? new(sem_size, 0, ConditionST()) : throw(ArgumentError("Semaphore size must be > 0"))
 end
 
 """

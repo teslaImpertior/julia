@@ -94,7 +94,7 @@ this, and can be used for level-triggered events.
 
 This object is NOT thread-safe. See [`Threads.ConditionMT`](@ref) for a thread-safe version.
 """
-mutable struct GenericCondition{L<:AbstractLock}
+struct GenericCondition{L<:AbstractLock}
     waitq::Vector{Any}
     lock::L
 
@@ -224,11 +224,8 @@ function notify(e::GenericEvent)
 end
 
 
-const ConditionST = GenericCondition{CooperativeLock}
+const ConditionST = GenericCondition{AlwaysLockedST}
 const EventST = GenericEvent{CooperativeLock}
-
-# default (Julia v1.0) is currently single-threaded
-const Condition = GenericCondition{AlwaysLockedST}
 
 
 ## scheduler and work queue
@@ -433,11 +430,11 @@ Use [`isopen`](@ref) to check whether it is still active.
 """
 mutable struct AsyncCondition
     handle::Ptr{Cvoid}
-    cond::Condition
+    cond::ConditionST
     isopen::Bool
 
     function AsyncCondition()
-        this = new(Libc.malloc(_sizeof_uv_async), Condition(), true)
+        this = new(Libc.malloc(_sizeof_uv_async), ConditionST(), true)
         associate_julia_struct(this.handle, this)
         finalizer(uvfinalize, this)
         err = ccall(:uv_async_init, Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
@@ -491,14 +488,14 @@ to check whether a timer is still active.
 """
 mutable struct Timer
     handle::Ptr{Cvoid}
-    cond::Condition
+    cond::ConditionST
     isopen::Bool
 
     function Timer(timeout::Real; interval::Real = 0.0)
         timeout ≥ 0 || throw(ArgumentError("timer cannot have negative timeout of $timeout seconds"))
         interval ≥ 0 || throw(ArgumentError("timer cannot have negative repeat interval of $interval seconds"))
 
-        this = new(Libc.malloc(_sizeof_uv_timer), Condition(), true)
+        this = new(Libc.malloc(_sizeof_uv_timer), ConditionST(), true)
         err = ccall(:uv_timer_init, Cint, (Ptr{Cvoid}, Ptr{Cvoid}), eventloop(), this)
         if err != 0
             #TODO: this codepath is currently not tested
